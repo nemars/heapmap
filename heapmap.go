@@ -38,7 +38,7 @@ func NewMin[K comparable, V any, P cmp.Ordered]() HeapMap[K, V, P] {
 				return a < b
 			},
 		},
-		m: make(map[K]Entry[K, V, P]),
+		m: make(map[K]*Entry[K, V, P]),
 	}
 }
 
@@ -49,13 +49,13 @@ func NewMax[K comparable, V any, P cmp.Ordered]() HeapMap[K, V, P] {
 				return a > b
 			},
 		},
-		m: make(map[K]Entry[K, V, P]),
+		m: make(map[K]*Entry[K, V, P]),
 	}
 }
 
 type heapmap[K comparable, V any, P cmp.Ordered] struct {
 	h pq[K, V, P]
-	m map[K]Entry[K, V, P]
+	m map[K]*Entry[K, V, P]
 }
 
 func (hm *heapmap[K, V, P]) Len() int {
@@ -83,8 +83,10 @@ func (hm *heapmap[K, V, P]) Pop() (Entry[K, V, P], bool) {
 }
 
 func (hm *heapmap[K, V, P]) Get(key K) (Entry[K, V, P], bool) {
-	e, ok := hm.m[key]
-	return e, ok
+	if e, ok := hm.m[key]; ok {
+		return *e, true
+	}
+	return Entry[K, V, P]{}, false
 }
 
 func (hm *heapmap[K, V, P]) Set(key K, value V, priority P) {
@@ -94,12 +96,12 @@ func (hm *heapmap[K, V, P]) Set(key K, value V, priority P) {
 		heap.Fix(&hm.h, e.index)
 		return
 	}
-	e := Entry[K, V, P]{
+	e := &Entry[K, V, P]{
 		Key:      key,
 		Value:    value,
 		Priority: priority,
 	}
-	heap.Push(&hm.h, &e)
+	heap.Push(&hm.h, e)
 	hm.m[key] = e
 }
 
@@ -119,7 +121,7 @@ func (hm *heapmap[K, V, P]) Remove(key K) {
 
 func (hm *heapmap[K, V, P]) Clear() {
 	hm.h.entries = hm.h.entries[:0]
-	hm.m = make(map[K]Entry[K, V, P])
+	hm.m = make(map[K]*Entry[K, V, P])
 }
 
 func (hm *heapmap[K, V, P]) Keys() []K {
@@ -141,7 +143,7 @@ func (hm *heapmap[K, V, P]) Values() []V {
 func (hm *heapmap[K, V, P]) Entries() []Entry[K, V, P] {
 	entries := make([]Entry[K, V, P], 0, hm.Len())
 	for _, e := range hm.m {
-		entries = append(entries, e)
+		entries = append(entries, *e)
 	}
 	return entries
 }
