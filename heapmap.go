@@ -5,14 +5,14 @@ import (
 	"container/heap"
 )
 
-type Entry[K comparable, V any, P cmp.Ordered] struct {
+type Entry[K comparable, V, P any] struct {
 	Key      K
 	Value    V
 	Priority P
 	index    int
 }
 
-type HeapMap[K comparable, V any, P cmp.Ordered] interface {
+type HeapMap[K comparable, V, P any] interface {
 	Len() int
 	Empty() bool
 
@@ -31,29 +31,28 @@ type HeapMap[K comparable, V any, P cmp.Ordered] interface {
 	Entries() []Entry[K, V, P]
 }
 
-func NewMin[K comparable, V any, P cmp.Ordered]() HeapMap[K, V, P] {
+func New[K comparable, V, P any](less func(P, P) bool) HeapMap[K, V, P] {
 	return &heapmap[K, V, P]{
 		h: pq[K, V, P]{
-			less: func(a, b P) bool {
-				return a < b
-			},
+			less: less,
 		},
 		m: make(map[K]*Entry[K, V, P]),
 	}
+}
+
+func NewMin[K comparable, V any, P cmp.Ordered]() HeapMap[K, V, P] {
+	return New[K, V, P](func(a, b P) bool {
+		return a < b
+	})
 }
 
 func NewMax[K comparable, V any, P cmp.Ordered]() HeapMap[K, V, P] {
-	return &heapmap[K, V, P]{
-		h: pq[K, V, P]{
-			less: func(a, b P) bool {
-				return a > b
-			},
-		},
-		m: make(map[K]*Entry[K, V, P]),
-	}
+	return New[K, V, P](func(a, b P) bool {
+		return a > b
+	})
 }
 
-type heapmap[K comparable, V any, P cmp.Ordered] struct {
+type heapmap[K comparable, V, P any] struct {
 	h pq[K, V, P]
 	m map[K]*Entry[K, V, P]
 }

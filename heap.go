@@ -1,8 +1,6 @@
 package heapmap
 
-import "cmp"
-
-type pq[K comparable, V any, P cmp.Ordered] struct {
+type pq[K comparable, V, P any] struct {
 	entries []*Entry[K, V, P]
 	less    func(P, P) bool
 }
